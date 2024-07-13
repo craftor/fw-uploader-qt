@@ -1,0 +1,7 @@
+<RCC>
+    <qresource prefix="/">
+        <file>resource/logo_512x512_cryan_r.png</file>
+        <file>resource/logo_1200x600_R_blue.png</file>
+        <file>resource/Firmware.png</file>
+    </qresource>
+</RCC>
