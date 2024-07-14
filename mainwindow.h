@@ -5,8 +5,9 @@
 #include <QTextEdit>
 #include <QTimer>
 #include <QtConcurrent/QtConcurrent>
-#include <dialogabout.h>
 
+#include <dialogabout.h>
+#include <dialoglogin.h>
 #include <firmwarehandler.h>
 
 typedef struct {
@@ -45,6 +46,7 @@ private:
   Ui::MainWindow *ui;
 
   DialogAbout *dlgAbout;
+  DialogLogin *dlgLogin;
 
   FirmwareHandler *fwManager;
 

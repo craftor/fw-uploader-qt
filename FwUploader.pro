@@ -10,17 +10,25 @@ CONFIG += c++17
 
 SOURCES += \
     dialogabout.cpp \
+    dialoglogin.cpp \
+    dialogregister.cpp \
     firmwarehandler.cpp \
     main.cpp \
-    mainwindow.cpp
+    mainwindow.cpp \
+    user.cpp
 
 HEADERS += \
     dialogabout.h \
+    dialoglogin.h \
+    dialogregister.h \
     firmwarehandler.h \
-    mainwindow.h
+    mainwindow.h \
+    user.h
 
 FORMS += \
     dialogabout.ui \
+    dialoglogin.ui \
+    dialogregister.ui \
     mainwindow.ui
 
 # Default rules for deployment.

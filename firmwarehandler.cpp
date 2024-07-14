@@ -17,11 +17,22 @@ QString FirmwareHandler::vecToBase64String(const QVector<quint8> &dataVector) {
 }
 
 QVector<FirmwareHandler::FirmwareData>
-FirmwareHandler::getAllFirmwareInfos(const QString &server) {
+FirmwareHandler::getAllFirmwareInfos(const QList<QNetworkCookie> cookies,
+                                     const QString &server) {
   QVector<FirmwareData> allFwDatas;
 
   QNetworkAccessManager manager;
   QNetworkRequest request((QUrl(server)));
+
+  // 设置请求类型
+  request.setHeader(QNetworkRequest::ContentTypeHeader, "application/json");
+
+  // 设置 cookies
+  foreach (const QNetworkCookie &cookie, cookies) {
+    request.setHeader(QNetworkRequest::CookieHeader,
+                      QVariant::fromValue(cookie));
+  }
+
   QNetworkReply *reply = manager.get(request);
 
   QEventLoop loop;
@@ -64,11 +75,20 @@ FirmwareHandler::getAllFirmwareInfos(const QString &server) {
  *
  * @return void
  */
-void FirmwareHandler::updateFirmware(const QString &server, int id,
+void FirmwareHandler::updateFirmware(const QList<QNetworkCookie> cookies,
+                                     const QString &server, int id,
                                      const UpdateFirmwareData &updatedFw) {
   QNetworkAccessManager manager;
   QNetworkRequest request(QUrl(server + "/" + QString::number(id)));
+
+  // 设置请求类型
   request.setHeader(QNetworkRequest::ContentTypeHeader, "application/json");
+
+  // 设置 cookies
+  foreach (const QNetworkCookie &cookie, cookies) {
+    request.setHeader(QNetworkRequest::CookieHeader,
+                      QVariant::fromValue(cookie));
+  }
 
   QJsonDocument doc;
   QJsonObject obj;
@@ -104,11 +124,20 @@ void FirmwareHandler::updateFirmware(const QString &server, int id,
  *
  * @return void
  */
-void FirmwareHandler::pushNewFirmware(const QString &server,
+void FirmwareHandler::pushNewFirmware(const QList<QNetworkCookie> cookies,
+                                      const QString &server,
                                       const NewFirmwareData &newData) {
   QNetworkAccessManager manager;
   QNetworkRequest request((QUrl(server)));
+
+  // 设置请求类型
   request.setHeader(QNetworkRequest::ContentTypeHeader, "application/json");
+
+  // 设置 cookies
+  foreach (const QNetworkCookie &cookie, cookies) {
+    request.setHeader(QNetworkRequest::CookieHeader,
+                      QVariant::fromValue(cookie));
+  }
 
   QJsonDocument doc;
   QJsonObject obj;
@@ -143,9 +172,19 @@ void FirmwareHandler::pushNewFirmware(const QString &server,
  *
  * @return void
  */
-void FirmwareHandler::deleteFirmwareById(const QString &server, int id) {
+void FirmwareHandler::deleteFirmwareById(const QList<QNetworkCookie> cookies,
+                                         const QString &server, int id) {
   QNetworkAccessManager manager;
   QNetworkRequest request(QUrl(server + "/" + QString::number(id)));
+
+  // 设置请求类型
+  request.setHeader(QNetworkRequest::ContentTypeHeader, "application/json");
+
+  // 设置 cookies
+  foreach (const QNetworkCookie &cookie, cookies) {
+    request.setHeader(QNetworkRequest::CookieHeader,
+                      QVariant::fromValue(cookie));
+  }
 
   QNetworkReply *reply = manager.deleteResource(request);
   QEventLoop loop;
@@ -171,7 +210,8 @@ void FirmwareHandler::deleteFirmwareById(const QString &server, int id) {
  *
  * @return QString  返回上传成功或失败的消息
  */
-QString FirmwareHandler::cmdUploadFw(const QString &server, const QString &code,
+QString FirmwareHandler::cmdUploadFw(const QList<QNetworkCookie> cookies,
+                                     const QString &server, const QString &code,
                                      const QString &version,
                                      const QString &fdata, int fsize) {
   bool ok;
@@ -186,7 +226,7 @@ QString FirmwareHandler::cmdUploadFw(const QString &server, const QString &code,
   int version_l = parts[2].toInt(&ok);
 
   QStringList fdataSlice = fdata.split(",");
-  QByteArray fwData = QByteArray::fromBase64(fdataSlice[1].toUtf8());
+  QByteArray fwData = fdataSlice[1].toUtf8().toBase64();
 
   FirmwareVersion versionData = {version_m, version_n, version_l};
   NewFirmwareData newData = {fwcode,    version_m, version_n,
@@ -201,21 +241,21 @@ QString FirmwareHandler::cmdUploadFw(const QString &server, const QString &code,
 
   // Assume these functions exist with similar functionality in your Qt
   // application
-  QVector<FirmwareData> allFwFiles = getAllFirmwareInfos(server);
+  QVector<FirmwareData> allFwFiles = getAllFirmwareInfos(cookies, server);
   QVector<FirmwareData> oldFw = findFirmware(allFwFiles, fwcode, versionData);
 
   if (oldFw.length() > 0) {
     // If firmware exists, update firmware
     QString msg = QString("Firmware existed, updating... ") +
                   QString::number(updatedFw.fwcode);
-    updateFirmware(server, oldFw[0].id, updatedFw);
+    updateFirmware(cookies, server, oldFw[0].id, updatedFw);
     qDebug() << msg;
     return msg;
   } else {
     // If firmware doesn't exist, upload new firmware
     QString msg =
         QString("Upload a new firmware -> ") + QString::number(newData.fwcode);
-    pushNewFirmware(server, newData);
+    pushNewFirmware(cookies, server, newData);
     qDebug() << msg;
     return msg;
   }

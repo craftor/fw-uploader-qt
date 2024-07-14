@@ -40,7 +40,7 @@ int main(int argc, char *argv[]) {
   a.processEvents();
 
   MainWindow w;
-  w.show();
+  // w.show();
 
   splash.finish(&w); // 程序启动画面结束
 

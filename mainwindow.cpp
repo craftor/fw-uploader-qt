@@ -10,6 +10,12 @@ MainWindow::MainWindow(QWidget *parent)
   dlgAbout = new DialogAbout();
   fwManager = new FirmwareHandler();
 
+  // 登录窗口
+  dlgLogin = new DialogLogin();
+  dlgLogin->show();
+
+  connect(dlgLogin, SIGNAL(loginSuccess()), this, SLOT(show()));
+
   initMsgPrinter();
 }
 
@@ -24,7 +30,8 @@ void MainWindow::on_pushButton_Upload_clicked() {}
 void MainWindow::on_pushButton_RefreshFw_clicked() {
 
   QVector<FirmwareHandler::FirmwareData> fwData =
-      fwManager->getAllFirmwareInfos("http://localhost:20000/firmware");
+      fwManager->getAllFirmwareInfos(dlgLogin->m_user->getCookies(),
+                                     "http://localhost:20000/firmware");
 
   qDebug() << fwData.length();
 }

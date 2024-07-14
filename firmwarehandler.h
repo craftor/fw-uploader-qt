@@ -27,6 +27,7 @@
 #include <QJsonDocument>
 #include <QJsonObject>
 #include <QNetworkAccessManager>
+#include <QNetworkCookie>
 #include <QNetworkReply>
 #include <QNetworkRequest>
 #include <QObject>
@@ -76,15 +77,21 @@ public:
 
   QString vecToBase64String(const QVector<quint8> &data);
 
-  QVector<FirmwareData> getAllFirmwareInfos(const QString &server);
+  QVector<FirmwareData> getAllFirmwareInfos(const QList<QNetworkCookie> cookies,
+                                            const QString &server);
 
-  void updateFirmware(const QString &server, int id,
+  void updateFirmware(const QList<QNetworkCookie> cookies,
+                      const QString &server, int id,
                       const UpdateFirmwareData &updatedFw);
-  void pushNewFirmware(const QString &server, const NewFirmwareData &newFw);
-  void deleteFirmwareById(const QString &server, int id);
+  void pushNewFirmware(const QList<QNetworkCookie> cookies,
+                       const QString &server, const NewFirmwareData &newFw);
+  void deleteFirmwareById(const QList<QNetworkCookie> cookies,
+                          const QString &server, int id);
 
-  QString cmdUploadFw(const QString &server, const QString &code,
+  QString cmdUploadFw(const QList<QNetworkCookie> cookies,
+                      const QString &server, const QString &code,
                       const QString &version, const QString &fdata, int fsize);
+
   QVector<FirmwareData> findFirmware(const QVector<FirmwareData> &allFwFiles,
                                      int code, const FirmwareVersion &version);
 };
