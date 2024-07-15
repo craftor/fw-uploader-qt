@@ -1,6 +1,53 @@
 #include "firmwarehandler.h"
 #include "qeventloop.h"
 
+QString FirmwareHandler::readBinaryFile(const QString &filePath) {
+  QVector<quint8> vectorData;
+
+  QFile file(filePath);
+  if (file.open(QIODevice::ReadOnly)) {
+    qint64 fileSize = file.size();
+    vectorData.resize(fileSize);
+
+    qint64 bytesRead =
+        file.read(reinterpret_cast<char *>(vectorData.data()), fileSize);
+    if (bytesRead != fileSize) {
+      // 读取文件时发生了错误
+      // 在这里处理错误
+      qDebug() << "Read File Error";
+    }
+
+    file.close();
+  } else {
+    // 文件打开失败
+    // 在这里处理错误
+    qDebug() << "Open File Error";
+  }
+
+  QString hexString;
+  QTextStream stream(&hexString);
+  for (int i = 0; i < vectorData.size(); ++i) {
+    stream << QString("%1")
+                  .arg(vectorData.at(i), 2, 16, QChar('0'))
+                  .toUpper(); // 转换为大写的十六进制字符串
+  }
+  return hexString.simplified(); // 去除多余的空格
+}
+
+QString FirmwareHandler::readAndEncodeFileToBase64(const QString &filePath) {
+  QFile file(filePath);
+  if (!file.open(QIODevice::ReadOnly)) {
+    qDebug() << "Failed to open file";
+    return QString();
+  }
+
+  QByteArray fileData = file.readAll();
+  file.close();
+
+  QByteArray base64Data = fileData.toBase64();
+  return QString(base64Data);
+}
+
 FirmwareHandler::FirmwareHandler(QObject *parent) : QObject{parent} {}
 
 /**
@@ -97,7 +144,7 @@ void FirmwareHandler::updateFirmware(const QList<QNetworkCookie> cookies,
   obj["version_n"] = updatedFw.version_n;
   obj["version_l"] = updatedFw.version_l;
   obj["fwsize"] = updatedFw.fwsize;
-  obj["fwdata"] = QString::fromUtf8(updatedFw.fwdata);
+  obj["fwdata"] = updatedFw.fwdata;
   obj["updated_at"] = updatedFw.updated_at.toString(Qt::ISODate);
 
   doc.setObject(obj);
@@ -127,7 +174,7 @@ void FirmwareHandler::updateFirmware(const QList<QNetworkCookie> cookies,
 void FirmwareHandler::pushNewFirmware(const QList<QNetworkCookie> cookies,
                                       const QString &server,
                                       const NewFirmwareData &newData) {
-  QNetworkAccessManager manager;
+  QNetworkAccessManager *manager = new QNetworkAccessManager(this);
   QNetworkRequest request((QUrl(server)));
 
   // 设置请求类型
@@ -146,12 +193,14 @@ void FirmwareHandler::pushNewFirmware(const QList<QNetworkCookie> cookies,
   obj["version_n"] = newData.version_n;
   obj["version_l"] = newData.version_l;
   obj["fwsize"] = newData.fwsize;
-  obj["fwdata"] = QString::fromUtf8(newData.fwdata);
+  obj["fwdata"] = newData.fwdata;
 
   doc.setObject(obj);
   QByteArray data = doc.toJson();
 
-  QNetworkReply *reply = manager.post(request, data);
+  qDebug() << data;
+
+  QNetworkReply *reply = manager->post(request, data);
   QEventLoop loop;
   QObject::connect(reply, &QNetworkReply::finished, &loop, &QEventLoop::quit);
   loop.exec();
@@ -225,18 +274,15 @@ QString FirmwareHandler::cmdUploadFw(const QList<QNetworkCookie> cookies,
   int version_n = parts[1].toInt(&ok);
   int version_l = parts[2].toInt(&ok);
 
-  QStringList fdataSlice = fdata.split(",");
-  QByteArray fwData = fdataSlice[1].toUtf8().toBase64();
-
   FirmwareVersion versionData = {version_m, version_n, version_l};
   NewFirmwareData newData = {fwcode,    version_m, version_n,
-                             version_l, fsize,     fwData};
+                             version_l, fsize,     fdata};
   UpdateFirmwareData updatedFw = {fwcode,
                                   version_m,
                                   version_n,
                                   version_l,
                                   fsize,
-                                  fwData,
+                                  fdata,
                                   QDateTime::currentDateTime()};
 
   // Assume these functions exist with similar functionality in your Qt
@@ -253,12 +299,15 @@ QString FirmwareHandler::cmdUploadFw(const QList<QNetworkCookie> cookies,
     return msg;
   } else {
     // If firmware doesn't exist, upload new firmware
-    QString msg =
-        QString("Upload a new firmware -> ") + QString::number(newData.fwcode);
-    pushNewFirmware(cookies, server, newData);
+    QString msg = QString("Uploading a new firmware -> ") +
+                  QString::number(newData.fwcode, 16);
     qDebug() << msg;
+    pushNewFirmware(cookies, server, newData);
+
     return msg;
   }
+
+  return "";
 }
 
 /**

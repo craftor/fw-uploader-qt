@@ -23,6 +23,7 @@
 #define FIRMWAREHANDLER_H
 
 #include <QDateTime>
+#include <QFile>
 #include <QJsonArray>
 #include <QJsonDocument>
 #include <QJsonObject>
@@ -51,7 +52,7 @@ public:
     int version_n;
     int version_l;
     int fwsize;
-    QByteArray fwdata;
+    QString fwdata;
     QDateTime created_at;
     QDateTime updated_at;
   };
@@ -62,7 +63,7 @@ public:
     int version_n;
     int version_l;
     int fwsize;
-    QByteArray fwdata;
+    QString fwdata;
   };
 
   struct UpdateFirmwareData {
@@ -71,9 +72,12 @@ public:
     int version_n;
     int version_l;
     int fwsize;
-    QByteArray fwdata;
+    QString fwdata;
     QDateTime updated_at;
   };
+
+  QString readBinaryFile(const QString &filePath);
+  QString readAndEncodeFileToBase64(const QString &filePath);
 
   QString vecToBase64String(const QVector<quint8> &data);
 

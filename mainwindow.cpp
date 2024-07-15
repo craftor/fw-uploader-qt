@@ -23,9 +23,33 @@ MainWindow::~MainWindow() { delete ui; }
 
 void MainWindow::on_actionAbout_triggered() { dlgAbout->show(); }
 
-void MainWindow::on_pushButton_OpenFile_clicked() {}
+void MainWindow::on_pushButton_OpenFile_clicked() {
+  QString file_full;
+  QFileInfo file_info;
 
-void MainWindow::on_pushButton_Upload_clicked() {}
+  file_full = QFileDialog::getOpenFileName(this, ("Open"), "",
+                                           "(*.bin;*.hex;*.elf)", nullptr);
+  file_info = QFileInfo(file_full);
+
+  if (!file_full.isNull()) {
+    ui->lineEdit_file->setText(file_full);
+    ui->lineEdit_FileSize->setText(QString::number(file_info.size()));
+  }
+}
+
+void MainWindow::on_pushButton_Upload_clicked() {
+  QString code = ui->lineEdit_code->text();
+  QString version = ui->lineEdit_version->text();
+  QString filePath = ui->lineEdit_file->text();
+
+  QFileInfo fileInfo(filePath);
+  QString fdata = fwManager->readAndEncodeFileToBase64(filePath);
+
+  QString result = fwManager->cmdUploadFw(
+      dlgLogin->m_user->getCookies(), "http://localhost:20000/firmware", code,
+      version, fdata, fileInfo.size());
+  qDebug() << result;
+}
 
 void MainWindow::on_pushButton_RefreshFw_clicked() {
 
@@ -37,7 +61,6 @@ void MainWindow::on_pushButton_RefreshFw_clicked() {
 }
 
 void MainWindow::initMsgPrinter() {
-
   // 启动定时器
   m_msgTimer = new QTimer(this);
   m_msgTimer->setInterval(100);
@@ -63,4 +86,8 @@ void MainWindow::msgTimerTimeout() {
     //        m_msgPrinter->moveCursor(QTextCursor::End);
     ui->textEdit_Log->textCursor().insertText(log_element.txt, tcf);
   }
+}
+
+void MainWindow::on_pushButton_ClearLog_clicked() {
+  ui->textEdit_Log->setText("");
 }

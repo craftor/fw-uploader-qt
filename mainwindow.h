@@ -1,6 +1,7 @@
 #ifndef MAINWINDOW_H
 #define MAINWINDOW_H
 
+#include <QFileDialog>
 #include <QMainWindow>
 #include <QTextEdit>
 #include <QTimer>
@@ -41,6 +42,8 @@ private slots:
   void on_pushButton_Upload_clicked();
 
   void on_pushButton_RefreshFw_clicked();
+
+  void on_pushButton_ClearLog_clicked();
 
 private:
   Ui::MainWindow *ui;
